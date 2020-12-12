@@ -4,9 +4,13 @@ Here is a sample program to decompose a hydrogen bond network into cycles.
 It is as close as possible to the one used in the paper, but it is slightly different from the code used in the actual analysis.
 """
 
+# pip import numpy networkx pairlist cycless
+
 import numpy as np
 import networkx as nx
 import pairlist as pl
+from cycless.dicycles import dicycles_iter
+
 
 def read_water(file):
     """
@@ -45,42 +49,6 @@ def read_water(file):
 
 
 
-
-def all_cycles(g, size):
-    """
-    List the cycles of the size only. No shortcuts are allowed during the search.
-    """
-
-    def find_cycle(history):
-        """
-        Recursively find a homodromic cycle.
-
-        The label of the first vertex in the history (head) must be the smallest.
-        """
-        head = history[0]
-        last = history[-1]
-        if len(history) == size:
-            for next in g.successors(last):
-                if next == head:
-                    # test the dipole moment of a cycle.
-                    d = np.zeros(3)
-                    for i in range(len(history)):
-                        a,b = history[i-1], history[i]
-                        d += g[a][b]["vec"]
-                    if np.allclose(d, np.zeros(3)):
-                        yield history
-        else:
-            for next in g.successors(last):
-                if next < head:
-                    # members must be greater than the head
-                    continue
-                if next not in history:
-                    yield from find_cycle(history+[next])
-
-    for head in g.nodes():
-        yield from find_cycle([head])
-
-
 def AtoX(A):
     # 環の個数のほうが十分多い場合の近似
     # 特異値分解
@@ -114,7 +82,7 @@ def weight(g):
     cycles = []
     for s in range(4, 16):
         lastA = len(A)
-        for cycle in all_cycles(g,s):
+        for cycle in dicycles_iter(g,s):
             cycles.append(cycle)
             row = np.zeros(len(HBcode))
             for j in range(len(cycle)):
